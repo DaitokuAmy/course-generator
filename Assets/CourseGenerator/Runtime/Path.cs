@@ -175,7 +175,7 @@ namespace CourseGenerator {
             flatRight.y = 0.0f;
             flatRight.Normalize();
             var forward = Quaternion.Euler(node.slope, 0.0f, 0.0f) * flatForward;
-            var right = startPoint.Right;
+            var right = Vector3.Slerp(startPoint.Right, Quaternion.Euler(0.0f, 0.0f, node.tilt) * flatRight, rate);
             var normal = Vector3.Cross(forward, right);
             var position = startPoint.Position + forward * node.straightDistance * rate;
             return new Point {
@@ -198,8 +198,10 @@ namespace CourseGenerator {
             flatRight.y = 0.0f;
             flatRight.Normalize();
             var curveAngle = node.curveType == CurveType.Left ? -CornerAngle : CornerAngle;
-            var rotate = Quaternion.Euler(node.slopeType == SlopeType.ToSharp ? node.slope : -node.slope, curveAngle, 0.0f);
-            var currentRotate = Quaternion.Slerp(Quaternion.identity, rotate, rate) * startPoint.Rotation;
+            var slope = node.slopeType == SlopeType.ToSharp ? node.slope : -node.slope;
+            var tilt = node.slopeType == SlopeType.ToSharp ? node.tilt : -node.tilt;
+            var offsetEulerAngles = new Vector3(slope, curveAngle, tilt) * rate;
+            var currentRotate = Quaternion.Euler(startPoint.Rotation.eulerAngles + offsetEulerAngles);
             var forward = currentRotate * Vector3.forward;
             var right = currentRotate * Vector3.right;
             var normal = Vector3.Cross(forward, right);
