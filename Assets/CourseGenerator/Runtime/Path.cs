@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using Unity.Mathematics;
 using UnityEngine;
 
 namespace CourseGenerator {
@@ -9,10 +8,6 @@ namespace CourseGenerator {
     /// </summary>
     [ExecuteAlways]
     public class Path : MonoBehaviour {
-        // コーナーの角度
-        private const float CornerAngle = 90.0f;
-        private const float CornerRadian = CornerAngle * Mathf.Deg2Rad;
-        
         /// <summary>
         /// パスのタイプ
         /// </summary>
@@ -28,26 +23,12 @@ namespace CourseGenerator {
         /// </summary>
         public struct Point {
             public Vector3 Position;
-            public Quaternion Rotation;
+            public Vector3 EulerAngles;
             public Vector3 Normal;
             public Vector3 Forward;
             public Vector3 Right;
-        }
 
-        /// <summary>
-        /// カーブタイプ
-        /// </summary>
-        private enum CurveType {
-            Left,
-            Right,
-        }
-
-        /// <summary>
-        /// スロープタイプ
-        /// </summary>
-        private enum SlopeType {
-            ToFlat,
-            ToSharp,
+            public Quaternion Rotation => Quaternion.Euler(EulerAngles);
         }
 
         /// <summary>
@@ -71,7 +52,7 @@ namespace CourseGenerator {
             [Header("Corner")]
             [SerializeField, Tooltip("カーブ半径")]
             public float curveRadius;
-            [SerializeField, Tooltip("カーブ角度"), Range(-90.0f, 90.0f)]
+            [SerializeField, Tooltip("カーブ角度"), Range(-180.0f, 180.0f)]
             public float curveAngle;
             [SerializeField, Tooltip("バンク"), Range(0.0f, 90.0f)]
             public float bank;
@@ -91,7 +72,7 @@ namespace CourseGenerator {
             var trans = transform;
             return new Point {
                 Position = trans.position,
-                Rotation = trans.rotation,
+                EulerAngles = trans.eulerAngles,
                 Forward = trans.forward,
                 Right = trans.right,
                 Normal = trans.up
@@ -185,9 +166,9 @@ namespace CourseGenerator {
             var flatForward = startPoint.Forward;
             flatForward.y = 0.0f;
             flatForward.Normalize();
-            var startEulerAngles = startPoint.Rotation.eulerAngles;
+            var startEulerAngles = startPoint.EulerAngles;
             var endEulerAngles = new Vector3(node.slope, startEulerAngles.y, node.tilt);
-            var currentEulerAngles = LerpAngles(startEulerAngles, endEulerAngles, rate);
+            var currentEulerAngles = Vector3.Lerp(startEulerAngles, endEulerAngles, rate);
             var currentRotation = Quaternion.Euler(currentEulerAngles);
             var forward = currentRotation * Vector3.forward;
             var right = currentRotation * Vector3.right;
@@ -199,7 +180,7 @@ namespace CourseGenerator {
             var position = startPoint.Position + distance * rate * flatForward + down;
             return new Point {
                 Position = position,
-                Rotation = currentRotation,
+                EulerAngles = currentEulerAngles,
                 Normal = normal,
                 Forward = forward,
                 Right = right,
@@ -224,14 +205,15 @@ namespace CourseGenerator {
             flatRight.y = 0.0f;
             flatRight.Normalize();
             var curveAngle = node.curveAngle;
-            var startEulerAngles = startPoint.Rotation.eulerAngles;
+            var startEulerAngles = startPoint.EulerAngles;
             var endEulerAngles = new Vector3(node.slope, startEulerAngles.y + curveAngle, node.tilt);
-            var currentEulerAngles = LerpAngles(startEulerAngles, endEulerAngles, rate);
-            currentEulerAngles.z -= Mathf.Sin(rate * Mathf.PI) * node.bank * curveAngle / 180.0f;
-            var currentRotaion = Quaternion.Euler(currentEulerAngles);
-            var forward = currentRotaion * Vector3.forward;
-            var right = currentRotaion * Vector3.right;
-            var normal = currentRotaion * Vector3.up;
+            var currentEulerAngles = Vector3.Lerp(startEulerAngles, endEulerAngles, rate);
+            var bank = -Mathf.Sin(rate * Mathf.PI) * node.bank * node.curveAngle / 180.0f;
+            currentEulerAngles.z = bank > 0.0f ? Mathf.Max(currentEulerAngles.z, bank) : Mathf.Min(currentEulerAngles.z, bank);
+            var currentRotation = Quaternion.Euler(currentEulerAngles);
+            var forward = currentRotation * Vector3.forward;
+            var right = currentRotation * Vector3.right;
+            var normal = currentRotation * Vector3.up;
             
             var curvePivot = (curveAngle > 0.0f ? Vector3.right : Vector3.left) * node.curveRadius;
             var pivotVector = -curvePivot;
@@ -249,7 +231,7 @@ namespace CourseGenerator {
             var position = startPoint.Position + Quaternion.Euler(0.0f, startEulerAngles.y, 0.0f) * (curvePivot + vector) + down;
             return new Point {
                 Position = position,
-                Rotation = currentRotaion,
+                EulerAngles = currentEulerAngles,
                 Normal = normal,
                 Forward = forward,
                 Right = right,
@@ -261,17 +243,6 @@ namespace CourseGenerator {
         /// </summary>
         private Point GetCornerEndPoint(Point startPoint, PathNode node) {
             return GetCornerPoint(startPoint, node, 1.0f);
-        }
-
-        /// <summary>
-        /// 角度の線形補間
-        /// </summary>
-        private Vector3 LerpAngles(Vector3 a, Vector3 b, float t) {
-            return new Vector3(
-                Mathf.LerpAngle(a.x, b.x, t),
-                Mathf.LerpAngle(a.y, b.y, t),
-                Mathf.LerpAngle(a.z, b.z, t)
-            );
         }
 
         /// <summary>
@@ -345,7 +316,7 @@ namespace CourseGenerator {
                 var point = GetPoint(Test);
                 var trans = TestObj.transform;
                 trans.position = point.Position;
-                trans.rotation = quaternion.LookRotation(point.Forward, point.Normal);
+                trans.rotation = point.Rotation;
             }
         }
     }

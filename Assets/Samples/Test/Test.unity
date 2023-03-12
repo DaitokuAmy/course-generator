@@ -280,50 +280,50 @@ MonoBehaviour:
     tilt: 0
     straightDistance: 10
     curveRadius: 15
-    curveAngle: -90
+    curveAngle: -54
     bank: 90
   - pathType: 1
     slope: 0
     tilt: 0
     straightDistance: 10
     curveRadius: 15
-    curveAngle: 90
-    bank: 90
+    curveAngle: 180
+    bank: 20
   - pathType: 0
     slope: 30
     tilt: 0
     straightDistance: 10
     curveRadius: 15
     curveAngle: 90
-    bank: 90
+    bank: 20
   - pathType: 0
     slope: 30
     tilt: 0
     straightDistance: 20
     curveRadius: 15
-    curveAngle: 90
-    bank: 90
+    curveAngle: 0
+    bank: 0
   - pathType: 1
     slope: 30
-    tilt: 0
+    tilt: 20
     straightDistance: 20
     curveRadius: 15
     curveAngle: 90
-    bank: 90
+    bank: 20
   - pathType: 1
     slope: 0
     tilt: 0
     straightDistance: 20
     curveRadius: 30
     curveAngle: 90
-    bank: 90
+    bank: 20
   - pathType: 1
     slope: 30
     tilt: 0
     straightDistance: 20
     curveRadius: 30
     curveAngle: -45
-    bank: 90
+    bank: 20
   - pathType: 0
     slope: 0
     tilt: 0
@@ -332,7 +332,7 @@ MonoBehaviour:
     curveAngle: -45
     bank: 90
   TestObj: {fileID: 1584729811}
-  Test: 0
+  Test: 1
 --- !u!4 &1177519530
 Transform:
   m_ObjectHideFlags: 0
@@ -555,8 +555,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1584729811}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: 0, y: 0.76040596, z: 0, w: -0.64944804}
+  m_LocalPosition: {x: -74.57575, y: -68.50392, z: -1.2783756}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
