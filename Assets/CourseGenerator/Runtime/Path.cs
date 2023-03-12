@@ -116,7 +116,7 @@ namespace CourseGenerator {
                 var distance = GetDistance(_pathNodes[i]);
                 if (distance < targetDistance) {
                     targetDistance -= distance;
-                    startPoint = GetPoint(startPoint, _pathNodes[i], 1.0f);
+                    startPoint = GetEndPoint(startPoint, _pathNodes[i]);
                     continue;
                 }
                 
@@ -146,12 +146,12 @@ namespace CourseGenerator {
         private Point GetEndPoint(Point startPoint, PathNode node) {
             switch (node.pathType) {
                 case PathType.Straight:
-                    return GetStraightPoint(startPoint, node, rate);
+                    return GetStraightEndPoint(startPoint, node);
                 case PathType.Corner:
-                    return GetCornerPoint(startPoint, node, rate);
+                    return GetCornerEndPoint(startPoint, node);
             }
 
-            return GetStraightPoint(startPoint, node, rate);
+            return GetStraightEndPoint(startPoint, node);
         }
 
         /// <summary>
@@ -185,16 +185,21 @@ namespace CourseGenerator {
             var flatForward = startPoint.Forward;
             flatForward.y = 0.0f;
             flatForward.Normalize();
-            var flatRight = startPoint.Right;
-            flatRight.y = 0.0f;
-            flatRight.Normalize();
-            var forward = Quaternion.Euler(node.slope, 0.0f, 0.0f) * flatForward;
-            var right = Vector3.Slerp(startPoint.Right, Quaternion.Euler(0.0f, 0.0f, node.tilt) * flatRight, rate);
-            var normal = Vector3.Cross(forward, right);
-            var position = startPoint.Position + node.straightDistance * rate * forward;
+            var startEulerAngles = startPoint.Rotation.eulerAngles;
+            var endEulerAngles = new Vector3(node.slope, startEulerAngles.y, node.tilt);
+            var currentEulerAngles = LerpAngles(startEulerAngles, endEulerAngles, rate);
+            var currentRotation = Quaternion.Euler(currentEulerAngles);
+            var forward = currentRotation * Vector3.forward;
+            var right = currentRotation * Vector3.right;
+            var normal = currentRotation * Vector3.up;
+            var distance = node.straightDistance;
+            var v0 = Mathf.Tan(startEulerAngles.x * Mathf.Deg2Rad);
+            var v1 = Mathf.Tan(endEulerAngles.x * Mathf.Deg2Rad);
+            var down = (v0 * rate + 0.5f * (v1 - v0) * rate * rate) * distance * Vector3.down;
+            var position = startPoint.Position + distance * rate * flatForward + down;
             return new Point {
                 Position = position,
-                Rotation = Quaternion.LookRotation(forward, normal),
+                Rotation = currentRotation,
                 Normal = normal,
                 Forward = forward,
                 Right = right,
@@ -205,29 +210,7 @@ namespace CourseGenerator {
         /// ストレート終端ポイントの取得
         /// </summary>
         private Point GetStraightEndPoint(Point startPoint, PathNode node) {
-            var flatForward = startPoint.Forward;
-            flatForward.y = 0.0f;
-            flatForward.Normalize();
-            var flatRight = startPoint.Right;
-            flatRight.y = 0.0f;
-            flatRight.Normalize();
-            var startEulerAngles = startPoint.Rotation.eulerAngles;
-            var endEulerAngles = new Vector3(node.slope, startEulerAngles.y, node.tilt);
-            var currentRotate = Quaternion.Euler(endEulerAngles);
-            var forward = currentRotate * Vector3.forward;
-            var right = currentRotate * Vector3.right;
-            var normal = currentRotate * Vector3.up;
-            var position = startPoint.Position + node.straightDistance * startPoint.Forward;
-            var v0 = Mathf.Tan(startEulerAngles.x * Mathf.Deg2Rad);
-            var v1 = Mathf.Tan(endEulerAngles.x * Mathf.Deg2Rad);
-            //var down = (v0 * rate + 0.5f * (v1 - v0) * rate * rate) * distance * Vector3.down;
-            return new Point {
-                Position = position,
-                Rotation = Quaternion.LookRotation(forward, normal),
-                Normal = normal,
-                Forward = forward,
-                Right = right,
-            };
+            return GetStraightPoint(startPoint, node, 1.0f);
         }
 
         /// <summary>
@@ -245,10 +228,10 @@ namespace CourseGenerator {
             var endEulerAngles = new Vector3(node.slope, startEulerAngles.y + curveAngle, node.tilt);
             var currentEulerAngles = LerpAngles(startEulerAngles, endEulerAngles, rate);
             currentEulerAngles.z -= Mathf.Sin(rate * Mathf.PI) * node.bank * curveAngle / 180.0f;
-            var currentRotate = Quaternion.Euler(currentEulerAngles);
-            var forward = currentRotate * Vector3.forward;
-            var right = currentRotate * Vector3.right;
-            var normal = currentRotate * Vector3.up;
+            var currentRotaion = Quaternion.Euler(currentEulerAngles);
+            var forward = currentRotaion * Vector3.forward;
+            var right = currentRotaion * Vector3.right;
+            var normal = currentRotaion * Vector3.up;
             
             var curvePivot = (curveAngle > 0.0f ? Vector3.right : Vector3.left) * node.curveRadius;
             var pivotVector = -curvePivot;
@@ -263,14 +246,21 @@ namespace CourseGenerator {
             var v0 = Mathf.Tan(startEulerAngles.x * Mathf.Deg2Rad);
             var v1 = Mathf.Tan(endEulerAngles.x * Mathf.Deg2Rad);
             var down = (v0 * rate + 0.5f * (v1 - v0) * rate * rate) * distance * Vector3.down;
-            var position = startPoint.Position + Quaternion.LookRotation(flatForward) * (curvePivot + vector) + down;
+            var position = startPoint.Position + Quaternion.Euler(0.0f, startEulerAngles.y, 0.0f) * (curvePivot + vector) + down;
             return new Point {
                 Position = position,
-                Rotation = currentRotate,
+                Rotation = currentRotaion,
                 Normal = normal,
                 Forward = forward,
                 Right = right,
             };
+        }
+
+        /// <summary>
+        /// コーナー終端ポイントの取得
+        /// </summary>
+        private Point GetCornerEndPoint(Point startPoint, PathNode node) {
+            return GetCornerPoint(startPoint, node, 1.0f);
         }
 
         /// <summary>

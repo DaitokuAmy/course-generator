@@ -273,37 +273,65 @@ MonoBehaviour:
     tilt: 0
     straightDistance: 10
     curveRadius: 0
-    curveType: 0
-    slopeType: 0
+    curveAngle: 0
+    bank: 0
   - pathType: 1
-    slope: 25
+    slope: 0
     tilt: 0
     straightDistance: 10
-    curveRadius: 5
-    curveType: 0
-    slopeType: 0
+    curveRadius: 15
+    curveAngle: -90
+    bank: 90
   - pathType: 1
-    slope: 25
+    slope: 0
     tilt: 0
     straightDistance: 10
-    curveRadius: 20
-    curveType: 1
-    slopeType: 1
+    curveRadius: 15
+    curveAngle: 90
+    bank: 90
   - pathType: 0
-    slope: 25
+    slope: 30
     tilt: 0
-    straightDistance: 30
-    curveRadius: 5
-    curveType: 0
-    slopeType: 0
+    straightDistance: 10
+    curveRadius: 15
+    curveAngle: 90
+    bank: 90
+  - pathType: 0
+    slope: 30
+    tilt: 0
+    straightDistance: 20
+    curveRadius: 15
+    curveAngle: 90
+    bank: 90
   - pathType: 1
-    slope: 25
+    slope: 30
     tilt: 0
-    straightDistance: 30
-    curveRadius: 5
-    curveType: 0
-    slopeType: 0
-  TestObj: {fileID: 0}
+    straightDistance: 20
+    curveRadius: 15
+    curveAngle: 90
+    bank: 90
+  - pathType: 1
+    slope: 0
+    tilt: 0
+    straightDistance: 20
+    curveRadius: 30
+    curveAngle: 90
+    bank: 90
+  - pathType: 1
+    slope: 30
+    tilt: 0
+    straightDistance: 20
+    curveRadius: 30
+    curveAngle: -45
+    bank: 90
+  - pathType: 0
+    slope: 0
+    tilt: 0
+    straightDistance: 50
+    curveRadius: 30
+    curveAngle: -45
+    bank: 90
+  TestObj: {fileID: 1584729811}
   Test: 0
 --- !u!4 &1177519530
 Transform:
@@ -535,4 +563,4 @@ Transform:
   - {fileID: 1194380099}
   m_Father: {fileID: 0}
   m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -4.3, y: -26.929, z: -17.948}
