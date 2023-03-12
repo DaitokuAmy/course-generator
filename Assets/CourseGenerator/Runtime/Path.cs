@@ -11,7 +11,7 @@ namespace CourseGenerator {
     public class Path : MonoBehaviour {
         // コーナーの角度
         private const float CornerAngle = 90.0f;
-        private const float CornerRadian = 90.0f * Mathf.Deg2Rad;
+        private const float CornerRadian = CornerAngle * Mathf.Deg2Rad;
         
         /// <summary>
         /// パスのタイプ
@@ -71,10 +71,10 @@ namespace CourseGenerator {
             [Header("Corner")]
             [SerializeField, Tooltip("カーブ半径")]
             public float curveRadius;
-            [SerializeField, Tooltip("カーブタイプ")]
-            public CurveType curveType;
-            [SerializeField, Tooltip("スロープタイプ")]
-            public SlopeType slopeType;
+            [SerializeField, Tooltip("カーブ角度"), Range(-90.0f, 90.0f)]
+            public float curveAngle;
+            [SerializeField, Tooltip("バンク"), Range(0.0f, 90.0f)]
+            public float bank;
         }
 
         [SerializeField, Tooltip("ノードリスト")]
@@ -134,10 +134,24 @@ namespace CourseGenerator {
                 case PathType.Straight:
                     return node.straightDistance;
                 case PathType.Corner:
-                    return node.curveRadius * Mathf.PI * 0.5f;
+                    return node.curveRadius * Mathf.Abs(node.curveAngle) * Mathf.Deg2Rad;
             }
 
             return node.straightDistance;
+        }
+
+        /// <summary>
+        /// 終端の取得
+        /// </summary>
+        private Point GetEndPoint(Point startPoint, PathNode node) {
+            switch (node.pathType) {
+                case PathType.Straight:
+                    return GetStraightPoint(startPoint, node, rate);
+                case PathType.Corner:
+                    return GetCornerPoint(startPoint, node, rate);
+            }
+
+            return GetStraightPoint(startPoint, node, rate);
         }
 
         /// <summary>
@@ -177,7 +191,36 @@ namespace CourseGenerator {
             var forward = Quaternion.Euler(node.slope, 0.0f, 0.0f) * flatForward;
             var right = Vector3.Slerp(startPoint.Right, Quaternion.Euler(0.0f, 0.0f, node.tilt) * flatRight, rate);
             var normal = Vector3.Cross(forward, right);
-            var position = startPoint.Position + forward * node.straightDistance * rate;
+            var position = startPoint.Position + node.straightDistance * rate * forward;
+            return new Point {
+                Position = position,
+                Rotation = Quaternion.LookRotation(forward, normal),
+                Normal = normal,
+                Forward = forward,
+                Right = right,
+            };
+        }
+
+        /// <summary>
+        /// ストレート終端ポイントの取得
+        /// </summary>
+        private Point GetStraightEndPoint(Point startPoint, PathNode node) {
+            var flatForward = startPoint.Forward;
+            flatForward.y = 0.0f;
+            flatForward.Normalize();
+            var flatRight = startPoint.Right;
+            flatRight.y = 0.0f;
+            flatRight.Normalize();
+            var startEulerAngles = startPoint.Rotation.eulerAngles;
+            var endEulerAngles = new Vector3(node.slope, startEulerAngles.y, node.tilt);
+            var currentRotate = Quaternion.Euler(endEulerAngles);
+            var forward = currentRotate * Vector3.forward;
+            var right = currentRotate * Vector3.right;
+            var normal = currentRotate * Vector3.up;
+            var position = startPoint.Position + node.straightDistance * startPoint.Forward;
+            var v0 = Mathf.Tan(startEulerAngles.x * Mathf.Deg2Rad);
+            var v1 = Mathf.Tan(endEulerAngles.x * Mathf.Deg2Rad);
+            //var down = (v0 * rate + 0.5f * (v1 - v0) * rate * rate) * distance * Vector3.down;
             return new Point {
                 Position = position,
                 Rotation = Quaternion.LookRotation(forward, normal),
@@ -197,16 +240,16 @@ namespace CourseGenerator {
             var flatRight = startPoint.Right;
             flatRight.y = 0.0f;
             flatRight.Normalize();
-            var curveAngle = node.curveType == CurveType.Left ? -CornerAngle : CornerAngle;
-            var slope = node.slopeType == SlopeType.ToSharp ? node.slope : -node.slope;
-            var tilt = node.slopeType == SlopeType.ToSharp ? node.tilt : -node.tilt;
-            var offsetEulerAngles = new Vector3(slope, curveAngle, tilt) * rate;
-            var currentRotate = Quaternion.Euler(startPoint.Rotation.eulerAngles + offsetEulerAngles);
+            var curveAngle = node.curveAngle;
+            var startEulerAngles = startPoint.Rotation.eulerAngles;
+            var endEulerAngles = new Vector3(node.slope, startEulerAngles.y + curveAngle, node.tilt);
+            var currentEulerAngles = LerpAngles(startEulerAngles, endEulerAngles, rate);
+            currentEulerAngles.z -= Mathf.Sin(rate * Mathf.PI) * node.bank * curveAngle / 180.0f;
+            var currentRotate = Quaternion.Euler(currentEulerAngles);
             var forward = currentRotate * Vector3.forward;
             var right = currentRotate * Vector3.right;
-            var normal = Vector3.Cross(forward, right);
+            var normal = currentRotate * Vector3.up;
             
-            var down = Mathf.Tan(node.slope * Mathf.Deg2Rad) * node.curveRadius * Vector3.down;
             var curvePivot = (curveAngle > 0.0f ? Vector3.right : Vector3.left) * node.curveRadius;
             var pivotVector = -curvePivot;
             var theta = curveAngle * Mathf.Deg2Rad * rate;
@@ -216,7 +259,11 @@ namespace CourseGenerator {
                 pivotVector.x * cosTheta + pivotVector.z * sinTheta,
                 0.0f,
                 -pivotVector.x * sinTheta + pivotVector.z * cosTheta);
-            var position = startPoint.Position + Quaternion.LookRotation(flatForward) * (curvePivot + vector) + down * Mathf.Abs(node.slopeType == SlopeType.ToFlat ? sinTheta : 1 - cosTheta);
+            var distance = GetDistance(node);
+            var v0 = Mathf.Tan(startEulerAngles.x * Mathf.Deg2Rad);
+            var v1 = Mathf.Tan(endEulerAngles.x * Mathf.Deg2Rad);
+            var down = (v0 * rate + 0.5f * (v1 - v0) * rate * rate) * distance * Vector3.down;
+            var position = startPoint.Position + Quaternion.LookRotation(flatForward) * (curvePivot + vector) + down;
             return new Point {
                 Position = position,
                 Rotation = currentRotate,
@@ -224,6 +271,17 @@ namespace CourseGenerator {
                 Forward = forward,
                 Right = right,
             };
+        }
+
+        /// <summary>
+        /// 角度の線形補間
+        /// </summary>
+        private Vector3 LerpAngles(Vector3 a, Vector3 b, float t) {
+            return new Vector3(
+                Mathf.LerpAngle(a.x, b.x, t),
+                Mathf.LerpAngle(a.y, b.y, t),
+                Mathf.LerpAngle(a.z, b.z, t)
+            );
         }
 
         /// <summary>
