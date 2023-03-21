@@ -83,7 +83,7 @@ namespace CourseGenerator {
         /// 現在のPointを取得
         /// </summary>
         public Point GetPoint(float rate) {
-            var totalDistance = _pathNodes.Sum(x => GetDistance(x));
+            var totalDistance = GetTotalDistance();
             var targetDistance = totalDistance * rate;
             return GetPointAtDistance(targetDistance);
         }
@@ -105,6 +105,13 @@ namespace CourseGenerator {
             }
 
             return startPoint;
+        }
+
+        /// <summary>
+        /// トータル距離の取得
+        /// </summary>
+        public float GetTotalDistance() {
+            return _pathNodes.Sum(GetDistance);
         }
 
         /// <summary>
@@ -311,12 +318,29 @@ namespace CourseGenerator {
             Gizmos.color = prevColor;
         }
 
+        private float _currentDistance;
         private void Update() {
-            if (TestObj != null) {
-                var point = GetPoint(Test);
-                var trans = TestObj.transform;
-                trans.position = point.Position;
-                trans.rotation = point.Rotation;
+            if (Input.GetKeyDown(KeyCode.Space)) {
+                _currentDistance = 0.0f;
+            }
+
+            if (Application.isPlaying) {
+                if (TestObj != null) {
+                    var point = GetPointAtDistance(_currentDistance);
+                    var trans = TestObj.transform;
+                    trans.position = point.Position;
+                    trans.rotation = point.Rotation;
+                }
+
+                _currentDistance += Time.deltaTime * 10.0f;
+            }
+            else {
+                if (TestObj != null) {
+                    var point = GetPoint(Test);
+                    var trans = TestObj.transform;
+                    trans.position = point.Position;
+                    trans.rotation = point.Rotation;
+                }
             }
         }
     }
