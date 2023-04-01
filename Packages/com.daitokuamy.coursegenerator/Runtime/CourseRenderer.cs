@@ -36,6 +36,13 @@ namespace CourseGenerator {
         private CoursePath _currentCoursePath;
 
         /// <summary>
+        /// メッシュの再構築
+        /// </summary>
+        public void RebuildMesh() {
+            _dirty = true;
+        }
+
+        /// <summary>
         /// 生成時処理
         /// </summary>
         private void Awake() {
