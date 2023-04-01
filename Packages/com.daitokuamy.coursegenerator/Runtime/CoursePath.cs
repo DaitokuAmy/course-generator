@@ -8,7 +8,7 @@ namespace CourseGenerator {
     /// コース用のパス
     /// </summary>
     [ExecuteAlways]
-    public class Path : MonoBehaviour {
+    public class CoursePath : MonoBehaviour {
         /// <summary>
         /// パスのタイプ
         /// </summary>

@@ -10,7 +10,7 @@ namespace CourseGenerator {
     [ExecuteAlways]
     public class CourseRenderer : MonoBehaviour {
         [SerializeField, Tooltip("描画対象のPath")]
-        private Path _path;
+        private CoursePath coursePath;
         [SerializeField, Tooltip("床描画に使うMaterial")]
         private Material _floorMaterial;
         [SerializeField, Tooltip("壁描画に使うMaterial")]
@@ -31,7 +31,7 @@ namespace CourseGenerator {
         private List<Vector3> _normals = new List<Vector3>();
 
         private bool _dirty;
-        private Path _currentPath;
+        private CoursePath _currentCoursePath;
 
         /// <summary>
         /// 生成時処理
@@ -70,15 +70,15 @@ namespace CourseGenerator {
             }
 
             // Pathの更新があった時、Dirtyを立てるようにイベント監視する
-            if (_currentPath != null) {
-                _currentPath.OnUpdatedPathEvent -= UpdatedPath;
+            if (_currentCoursePath != null) {
+                _currentCoursePath.OnUpdatedPathEvent -= UpdatedPath;
             }
 
-            if (_path != null) {
-                _path.OnUpdatedPathEvent += UpdatedPath;
+            if (coursePath != null) {
+                coursePath.OnUpdatedPathEvent += UpdatedPath;
             }
             
-            _currentPath = _path;
+            _currentCoursePath = coursePath;
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace CourseGenerator {
             
             _mesh = new Mesh();
 
-            if (_width <= float.Epsilon || _unitDistance <= float.Epsilon || _path == null) {
+            if (_width <= float.Epsilon || _unitDistance <= float.Epsilon || coursePath == null) {
                 return;
             }
 
@@ -101,7 +101,7 @@ namespace CourseGenerator {
             _uvs.Clear();
             _normals.Clear();
 
-            var totalDistance = _path.GetTotalDistance();
+            var totalDistance = coursePath.GetTotalDistance();
 
             // 床の生成
             var distance = 0.0f;
@@ -109,7 +109,7 @@ namespace CourseGenerator {
             var centerEdgeCount = Mathf.Max(0, _centerEdgeCount);
             var vtxUnitCount = centerEdgeCount + 2;
             while (distance <= totalDistance) {
-                var point = _path.GetPointAtDistance(distance);
+                var point = coursePath.GetPointAtDistance(distance);
                 var halfWidth = _width * 0.5f;
                 var left = point.Position - point.Right * halfWidth;
                 var right = point.Position + point.Right * halfWidth;

@@ -361,7 +361,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 731657dcbb1bd7a4882796cde6ca1848, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _path: {fileID: 1177519529}
+  coursePath: {fileID: 1177519529}
   _floorMaterial: {fileID: 2100000, guid: 914abcb96d85e8549afef0c6936354b8, type: 2}
   _wallMaterial: {fileID: 2100000, guid: a988eddb28d743f4e9daf8ab8089bf33, type: 2}
   _unitDistance: 1
