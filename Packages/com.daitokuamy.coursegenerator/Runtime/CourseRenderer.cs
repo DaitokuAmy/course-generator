@@ -23,6 +23,8 @@ namespace CourseGenerator {
         private float _width = 1.0f;
         [SerializeField, Tooltip("壁の高さ")]
         private float _wallHeight = 1.0f;
+        [SerializeField, Tooltip("壁の幅")]
+        private float _wallWidth = 1.0f;
 
         private Mesh _mesh;
         private List<Vector3> _vertices = new List<Vector3>();
@@ -151,62 +153,256 @@ namespace CourseGenerator {
             }
             
             // FloorのIndex数記憶
+            var floorVertexCount = _vertices.Count;
             var floorIndexCount = _triangles.Count;
-            
-            // 壁の生成
-            var vtxOffset = _vertices.Count;
             var lineCount = lineIndex;
-            for (lineIndex = 0; lineIndex < lineCount; lineIndex++) {
-                var floorLeft = _vertices[lineIndex * vtxUnitCount];
-                var floorRight = _vertices[(lineIndex + 1) * vtxUnitCount - 1];
-                var floorUvLeft = _uvs[lineIndex * vtxUnitCount];
-                var floorNormal = _normals[lineIndex * vtxUnitCount];
-                
-                // 壁の上方向
-                var wallUpOffset = floorNormal * _wallHeight;
-                
-                // WorldUpに垂直なNormalを求める
-                var normal = floorRight - floorLeft;
-                normal.y = 0.0f;
-                normal.Normalize();
-                
-                // Left
-                _vertices.Add(floorLeft);
-                _normals.Add(normal);
-                _uvs.Add(new Vector2(0.0f, floorUvLeft.y));
-                _vertices.Add(floorLeft + wallUpOffset);
-                _normals.Add(normal);
-                _uvs.Add(new Vector2(1.0f, floorUvLeft.y));
-                
-                // Right
-                _vertices.Add(floorRight);
-                _normals.Add(-normal);
-                _uvs.Add(new Vector2(0.0f, floorUvLeft.y));
-                _vertices.Add(floorRight + wallUpOffset);
-                _normals.Add(-normal);
-                _uvs.Add(new Vector2(1.0f, floorUvLeft.y));
 
-                // Index
-                if (lineIndex > 0) {
-                    var unitCount = 4;
-                    var idx = (lineIndex - 1) * unitCount + vtxOffset;
+            // 壁の生成
+            void CreateWall(float offset, bool reverse) {
+                var vtxOffset = _vertices.Count;
+                for (lineIndex = 0; lineIndex < lineCount; lineIndex++) {
+                    var floorLeft = _vertices[lineIndex * vtxUnitCount];
+                    var floorRight = _vertices[(lineIndex + 1) * vtxUnitCount - 1];
+                    var floorUvLeft = _uvs[lineIndex * vtxUnitCount];
+                    var floorNormal = _normals[lineIndex * vtxUnitCount];
+                    
+                    // 壁の頂点情報
+                    var wallNormal = (floorRight - floorLeft).normalized;
+                    var wallUpOffset = floorNormal * _wallHeight;
+                    var wallLeft = floorLeft - wallNormal * offset;
+                    var wallRight = floorRight + wallNormal * offset;
                     
                     // Left
-                    _triangles.Add(idx + 0);
-                    _triangles.Add(idx + 1);
-                    _triangles.Add(idx + unitCount);
-                    _triangles.Add(idx + unitCount);
-                    _triangles.Add(idx + 1);
-                    _triangles.Add(idx + unitCount + 1);
+                    _vertices.Add(wallLeft);
+                    _normals.Add(wallNormal);
+                    _uvs.Add(new Vector2(0.0f, floorUvLeft.y));
+                    _vertices.Add(wallLeft + wallUpOffset);
+                    _normals.Add(wallNormal);
+                    _uvs.Add(new Vector2(1.0f, floorUvLeft.y));
                     
                     // Right
-                    _triangles.Add(idx + 2);
-                    _triangles.Add(idx + 2 + unitCount);
-                    _triangles.Add(idx + 3);
-                    _triangles.Add(idx + 3);
-                    _triangles.Add(idx + 2 + unitCount);
-                    _triangles.Add(idx + 3 + unitCount);
+                    _vertices.Add(wallRight);
+                    _normals.Add(-wallNormal);
+                    _uvs.Add(new Vector2(0.0f, floorUvLeft.y));
+                    _vertices.Add(wallRight + wallUpOffset);
+                    _normals.Add(-wallNormal);
+                    _uvs.Add(new Vector2(1.0f, floorUvLeft.y));
+
+                    // Index
+                    if (lineIndex > 0) {
+                        var unitCount = 4;
+                        var idx = (lineIndex - 1) * unitCount + vtxOffset;
+                        
+                        if (reverse) {
+                            // Left
+                            _triangles.Add(idx + 0);
+                            _triangles.Add(idx + unitCount);
+                            _triangles.Add(idx + 1);
+                            _triangles.Add(idx + unitCount);
+                            _triangles.Add(idx + unitCount + 1);
+                            _triangles.Add(idx + 1);
+                            
+                            // Right
+                            _triangles.Add(idx + 2);
+                            _triangles.Add(idx + 3);
+                            _triangles.Add(idx + 2 + unitCount);
+                            _triangles.Add(idx + 3);
+                            _triangles.Add(idx + 3 + unitCount);
+                            _triangles.Add(idx + 2 + unitCount);
+                        }
+                        else {
+                            // Left
+                            _triangles.Add(idx + 0);
+                            _triangles.Add(idx + 1);
+                            _triangles.Add(idx + unitCount);
+                            _triangles.Add(idx + unitCount);
+                            _triangles.Add(idx + 1);
+                            _triangles.Add(idx + unitCount + 1);
+                            
+                            // Right
+                            _triangles.Add(idx + 2);
+                            _triangles.Add(idx + 2 + unitCount);
+                            _triangles.Add(idx + 3);
+                            _triangles.Add(idx + 3);
+                            _triangles.Add(idx + 2 + unitCount);
+                            _triangles.Add(idx + 3 + unitCount);
+                        }
+                    }
                 }
+            }
+            
+            CreateWall(0.0f, false);
+            CreateWall(_wallWidth, true);
+            
+            // 壁の端
+            {
+                var vtxOffset = _vertices.Count;
+                var wallVtxUnit = lineCount * 4;
+                for (lineIndex = 0; lineIndex < lineCount; lineIndex++) {
+                    var wallVtxOffset = lineIndex * 4 + floorVertexCount;
+                    var wallLB0 = _vertices[wallVtxOffset + 0];
+                    var wallLT0 = _vertices[wallVtxOffset + 1];
+                    var wallLB1 = _vertices[wallVtxOffset + 0 + wallVtxUnit];
+                    var wallLT1 = _vertices[wallVtxOffset + 1 + wallVtxUnit];
+                    var wallRB0 = _vertices[wallVtxOffset + 2];
+                    var wallRT0 = _vertices[wallVtxOffset + 3];
+                    var wallRB1 = _vertices[wallVtxOffset + 2 + wallVtxUnit];
+                    var wallRT1 = _vertices[wallVtxOffset + 3 + wallVtxUnit];
+                    var wallUv = _uvs[wallVtxOffset + 0];
+
+                    var edgeNormal = (wallLT0 - wallLB0).normalized;
+                    
+                    // Left(Bottom/Top)
+                    _vertices.Add(wallLB0);
+                    _normals.Add(-edgeNormal);
+                    _uvs.Add(new Vector2(1.0f, wallUv.y));
+                    _vertices.Add(wallLB1);
+                    _normals.Add(-edgeNormal);
+                    _uvs.Add(new Vector2(0.0f, wallUv.y));
+                    _vertices.Add(wallLT0);
+                    _normals.Add(edgeNormal);
+                    _uvs.Add(new Vector2(1.0f, wallUv.y));
+                    _vertices.Add(wallLT1);
+                    _normals.Add(edgeNormal);
+                    _uvs.Add(new Vector2(0.0f, wallUv.y));
+                    
+                    // Right(Bottom/Top)
+                    _vertices.Add(wallRB0);
+                    _normals.Add(-edgeNormal);
+                    _uvs.Add(new Vector2(0.0f, wallUv.y));
+                    _vertices.Add(wallRB1);
+                    _normals.Add(-edgeNormal);
+                    _uvs.Add(new Vector2(1.0f, wallUv.y));
+                    _vertices.Add(wallRT0);
+                    _normals.Add(edgeNormal);
+                    _uvs.Add(new Vector2(0.0f, wallUv.y));
+                    _vertices.Add(wallRT1);
+                    _normals.Add(edgeNormal);
+                    _uvs.Add(new Vector2(1.0f, wallUv.y));
+
+                    // Index
+                    if (lineIndex > 0) {
+                        var unitCount = 8;
+                        var idx = (lineIndex - 1) * unitCount + vtxOffset;
+                        
+                        // Left(Bottom/Top)
+                        _triangles.Add(idx + 0);
+                        _triangles.Add(idx + unitCount);
+                        _triangles.Add(idx + 1);
+                        _triangles.Add(idx + unitCount);
+                        _triangles.Add(idx + unitCount + 1);
+                        _triangles.Add(idx + 1);
+                        _triangles.Add(idx + 2);
+                        _triangles.Add(idx + 3);
+                        _triangles.Add(idx + unitCount + 2);
+                        _triangles.Add(idx + unitCount + 2);
+                        _triangles.Add(idx + 3);
+                        _triangles.Add(idx + unitCount + 3);
+                        
+                        // Right(Bottom/Top)
+                        _triangles.Add(idx + 6);
+                        _triangles.Add(idx + 7);
+                        _triangles.Add(idx + unitCount + 6);
+                        _triangles.Add(idx + unitCount + 6);
+                        _triangles.Add(idx + 7);
+                        _triangles.Add(idx + unitCount + 7);
+                        _triangles.Add(idx + 4);
+                        _triangles.Add(idx + unitCount + 4);
+                        _triangles.Add(idx + 5);
+                        _triangles.Add(idx + unitCount + 4);
+                        _triangles.Add(idx + unitCount + 5);
+                        _triangles.Add(idx + 5);
+                    }
+                }
+            }
+            
+            // 始点/終点
+            {
+                var wallVtxUnit = lineCount * 4;
+                
+                void CreatePoint(int wallVtxOffset, bool reverse) {
+                    var vtxOffset = _vertices.Count;
+                    var wallLB0 = _vertices[wallVtxOffset + 0];
+                    var wallLT0 = _vertices[wallVtxOffset + 1];
+                    var wallLB1 = _vertices[wallVtxOffset + 0 + wallVtxUnit];
+                    var wallLT1 = _vertices[wallVtxOffset + 1 + wallVtxUnit];
+                    var wallRB0 = _vertices[wallVtxOffset + 2];
+                    var wallRT0 = _vertices[wallVtxOffset + 3];
+                    var wallRB1 = _vertices[wallVtxOffset + 2 + wallVtxUnit];
+                    var wallRT1 = _vertices[wallVtxOffset + 3 + wallVtxUnit];
+
+                    var pointNormal = Vector3.Cross( wallLB1 - wallLB0, wallLT0 - wallLB0);
+                    pointNormal = reverse ? -pointNormal : pointNormal;
+                    
+                    // Left(Bottom/Top)
+                    _vertices.Add(wallLB0);
+                    _normals.Add(pointNormal);
+                    _uvs.Add(new Vector2(1.0f, 0.0f));
+                    _vertices.Add(wallLB1);
+                    _normals.Add(pointNormal);
+                    _uvs.Add(new Vector2(0.0f, 0.0f));
+                    _vertices.Add(wallLT0);
+                    _normals.Add(pointNormal);
+                    _uvs.Add(new Vector2(1.0f, 1.0f));
+                    _vertices.Add(wallLT1);
+                    _normals.Add(pointNormal);
+                    _uvs.Add(new Vector2(0.0f, 1.0f));
+                    
+                    // Right(Bottom/Top)
+                    _vertices.Add(wallRB0);
+                    _normals.Add(pointNormal);
+                    _uvs.Add(new Vector2(0.0f, 0.0f));
+                    _vertices.Add(wallRB1);
+                    _normals.Add(pointNormal);
+                    _uvs.Add(new Vector2(1.0f, 0.0f));
+                    _vertices.Add(wallRT0);
+                    _normals.Add(pointNormal);
+                    _uvs.Add(new Vector2(0.0f, 1.0f));
+                    _vertices.Add(wallRT1);
+                    _normals.Add(pointNormal);
+                    _uvs.Add(new Vector2(1.0f, 1.0f));
+
+                    // Index
+                    var idx = vtxOffset;
+
+                    if (reverse) {
+                        // Left(Bottom/Top)
+                        _triangles.Add(idx + 0);
+                        _triangles.Add(idx + 2);
+                        _triangles.Add(idx + 1);
+                        _triangles.Add(idx + 2);
+                        _triangles.Add(idx + 3);
+                        _triangles.Add(idx + 1);
+                    
+                        // Right(Bottom/Top)
+                        _triangles.Add(idx + 4);
+                        _triangles.Add(idx + 5);
+                        _triangles.Add(idx + 6);
+                        _triangles.Add(idx + 5);
+                        _triangles.Add(idx + 7);
+                        _triangles.Add(idx + 6);
+                    }
+                    else {
+                        // Left(Bottom/Top)
+                        _triangles.Add(idx + 0);
+                        _triangles.Add(idx + 1);
+                        _triangles.Add(idx + 2);
+                        _triangles.Add(idx + 2);
+                        _triangles.Add(idx + 1);
+                        _triangles.Add(idx + 3);
+                    
+                        // Right(Bottom/Top)
+                        _triangles.Add(idx + 4);
+                        _triangles.Add(idx + 6);
+                        _triangles.Add(idx + 5);
+                        _triangles.Add(idx + 5);
+                        _triangles.Add(idx + 6);
+                        _triangles.Add(idx + 7);
+                    }
+                }
+
+                CreatePoint(floorVertexCount, false);
+                CreatePoint((lineCount - 1) * 4 + floorVertexCount, true);
             }
 
             // Mesh構築

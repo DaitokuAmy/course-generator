@@ -333,7 +333,7 @@ MonoBehaviour:
     curveAngle: -45
     bank: 90
   _previewObject: {fileID: 2105254220}
-  _previewProgress: 0.487
+  _previewProgress: 0.502
 --- !u!4 &1177519530
 Transform:
   m_ObjectHideFlags: 0
@@ -368,6 +368,7 @@ MonoBehaviour:
   _centerEdgeCount: 5
   _width: 5
   _wallHeight: 1
+  _wallWidth: 1
 --- !u!1 &1194380096
 GameObject:
   m_ObjectHideFlags: 0
@@ -606,8 +607,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2105254220}
-  m_LocalRotation: {x: -0.04079251, y: 0.95643437, z: -0.25563008, w: -0.13499102}
-  m_LocalPosition: {x: 41.32965, y: -30.627941, z: 12.525673}
+  m_LocalRotation: {x: 0.04272277, y: 0.93449056, z: -0.27752915, w: -0.2188144}
+  m_LocalPosition: {x: 39.89784, y: -32.754112, z: 9.142818}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
