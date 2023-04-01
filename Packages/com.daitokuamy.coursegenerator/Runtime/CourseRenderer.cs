@@ -70,17 +70,15 @@ namespace CourseGenerator {
             }
 
             // Pathの更新があった時、Dirtyを立てるようにイベント監視する
-            if (_currentPath != _path) {
-                if (_currentPath != null) {
-                    _currentPath.OnUpdatedPathEvent -= UpdatedPath;
-                }
-
-                if (_path != null) {
-                    _path.OnUpdatedPathEvent += UpdatedPath;
-                }
-
-                _currentPath = _path;
+            if (_currentPath != null) {
+                _currentPath.OnUpdatedPathEvent -= UpdatedPath;
             }
+
+            if (_path != null) {
+                _path.OnUpdatedPathEvent += UpdatedPath;
+            }
+            
+            _currentPath = _path;
         }
 
         /// <summary>
@@ -158,11 +156,14 @@ namespace CourseGenerator {
             // 壁の生成
             var vtxOffset = _vertices.Count;
             var lineCount = lineIndex;
-            var wallOffset = Vector3.up * _wallHeight;
             for (lineIndex = 0; lineIndex < lineCount; lineIndex++) {
                 var floorLeft = _vertices[lineIndex * vtxUnitCount];
                 var floorRight = _vertices[(lineIndex + 1) * vtxUnitCount - 1];
                 var floorUvLeft = _uvs[lineIndex * vtxUnitCount];
+                var floorNormal = _normals[lineIndex * vtxUnitCount];
+                
+                // 壁の上方向
+                var wallUpOffset = floorNormal * _wallHeight;
                 
                 // WorldUpに垂直なNormalを求める
                 var normal = floorRight - floorLeft;
@@ -173,7 +174,7 @@ namespace CourseGenerator {
                 _vertices.Add(floorLeft);
                 _normals.Add(normal);
                 _uvs.Add(new Vector2(0.0f, floorUvLeft.y));
-                _vertices.Add(floorLeft + wallOffset);
+                _vertices.Add(floorLeft + wallUpOffset);
                 _normals.Add(normal);
                 _uvs.Add(new Vector2(1.0f, floorUvLeft.y));
                 
@@ -181,7 +182,7 @@ namespace CourseGenerator {
                 _vertices.Add(floorRight);
                 _normals.Add(-normal);
                 _uvs.Add(new Vector2(0.0f, floorUvLeft.y));
-                _vertices.Add(floorRight + wallOffset);
+                _vertices.Add(floorRight + wallUpOffset);
                 _normals.Add(-normal);
                 _uvs.Add(new Vector2(1.0f, floorUvLeft.y));
 

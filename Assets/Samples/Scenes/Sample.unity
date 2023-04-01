@@ -282,14 +282,14 @@ MonoBehaviour:
     straightDistance: 10
     curveRadius: 15
     curveAngle: -54
-    bank: 90
+    bank: 25
   - pathType: 1
     slope: 0
     tilt: 0
     straightDistance: 10
     curveRadius: 15
     curveAngle: 180
-    bank: 20
+    bank: 35
   - pathType: 0
     slope: 30
     tilt: 0
@@ -310,7 +310,7 @@ MonoBehaviour:
     straightDistance: 20
     curveRadius: 15
     curveAngle: 90
-    bank: 20
+    bank: 50
   - pathType: 1
     slope: 0
     tilt: 0
@@ -333,7 +333,7 @@ MonoBehaviour:
     curveAngle: -45
     bank: 90
   _previewObject: {fileID: 2105254220}
-  _previewProgress: 0
+  _previewProgress: 0.487
 --- !u!4 &1177519530
 Transform:
   m_ObjectHideFlags: 0
@@ -606,8 +606,8 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2105254220}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: -0.04079251, y: 0.95643437, z: -0.25563008, w: -0.13499102}
+  m_LocalPosition: {x: 41.32965, y: -30.627941, z: 12.525673}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

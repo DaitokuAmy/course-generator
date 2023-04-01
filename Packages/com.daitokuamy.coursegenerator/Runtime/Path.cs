@@ -70,6 +70,15 @@ namespace CourseGenerator {
         public event Action OnUpdatedPathEvent;
 
         /// <summary>
+        /// Pathのクリア
+        /// </summary>
+        public void ClearPaths() {
+            _pathNodes.Clear();
+            
+            OnUpdatedPathEvent?.Invoke();
+        }
+
+        /// <summary>
         /// 直線Pathの追加
         /// </summary>
         /// <param name="slope">勾配</param>
@@ -264,7 +273,7 @@ namespace CourseGenerator {
             var endEulerAngles = new Vector3(node.slope, startEulerAngles.y + curveAngle, node.tilt);
             var currentEulerAngles = Vector3.Lerp(startEulerAngles, endEulerAngles, rate);
             var bank = -Mathf.Sin(rate * Mathf.PI) * node.bank * node.curveAngle / 180.0f;
-            currentEulerAngles.z = bank > 0.0f ? Mathf.Max(currentEulerAngles.z, bank) : Mathf.Min(currentEulerAngles.z, bank);
+            currentEulerAngles.z += bank;
             var currentRotation = Quaternion.Euler(currentEulerAngles);
             var forward = currentRotation * Vector3.forward;
             var right = currentRotation * Vector3.right;
