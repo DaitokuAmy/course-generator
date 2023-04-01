@@ -332,8 +332,8 @@ MonoBehaviour:
     curveRadius: 30
     curveAngle: -45
     bank: 90
-  TestObj: {fileID: 2105254220}
-  Test: 0
+  _previewObject: {fileID: 2105254220}
+  _previewProgress: 0
 --- !u!4 &1177519530
 Transform:
   m_ObjectHideFlags: 0
@@ -362,9 +362,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _path: {fileID: 1177519529}
-  _material: {fileID: 2100000, guid: 914abcb96d85e8549afef0c6936354b8, type: 2}
+  _floorMaterial: {fileID: 2100000, guid: 914abcb96d85e8549afef0c6936354b8, type: 2}
+  _wallMaterial: {fileID: 2100000, guid: a988eddb28d743f4e9daf8ab8089bf33, type: 2}
   _unitDistance: 1
+  _centerEdgeCount: 5
   _width: 5
+  _wallHeight: 1
 --- !u!1 &1194380096
 GameObject:
   m_ObjectHideFlags: 0

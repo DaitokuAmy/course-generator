@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -59,11 +60,58 @@ namespace CourseGenerator {
         }
 
         [SerializeField, Tooltip("ノードリスト")]
-        private PathNode[] _pathNodes;
+        private List<PathNode> _pathNodes;
+        [SerializeField, Tooltip("プレビュー用オブジェクト")]
+        private GameObject _previewObject;
+        [SerializeField, Tooltip("プレビュー用進捗スライダー"), Range(0.0f, 1.0f)]
+        private float _previewProgress;
 
-        public GameObject TestObj;
-        [Range(0.0f, 1.0f)]
-        public float Test;
+        // Path更新イベント
+        public event Action OnUpdatedPathEvent;
+
+        /// <summary>
+        /// 直線Pathの追加
+        /// </summary>
+        /// <param name="slope">勾配</param>
+        /// <param name="tilt">傾き</param>
+        /// <param name="distance">距離(XZ)</param>
+        public void AddStraightPath(float slope, float tilt, float distance) {
+            distance = Mathf.Max(distance, 0.0f);
+            
+            var pathNode = new PathNode();
+            pathNode.pathType = PathType.Straight;
+            pathNode.slope = slope;
+            pathNode.tilt = tilt;
+            pathNode.straightDistance = distance;
+            _pathNodes.Add(pathNode);
+            
+            OnUpdatedPathEvent?.Invoke();
+        }
+
+        /// <summary>
+        /// コーナーPathの追加
+        /// </summary>
+        /// <param name="slope">勾配</param>
+        /// <param name="tilt">傾き</param>
+        /// <param name="curveRadius">カーブ半径</param>
+        /// <param name="curveAngle">カーブ角度(-180～180)</param>
+        /// <param name="bank">バンク(0～90)</param>
+        public void AddCornerPath(float slope, float tilt, float curveRadius, float curveAngle, float bank) {
+            curveRadius = Mathf.Max(curveRadius, 0.0f);
+            curveAngle = Mathf.Clamp(curveAngle, -180, 180);
+            bank = Mathf.Clamp(bank, 0, 90);
+            
+            var pathNode = new PathNode();
+            pathNode.pathType = PathType.Corner;
+            pathNode.slope = slope;
+            pathNode.tilt = tilt;
+            pathNode.curveRadius = curveRadius;
+            pathNode.curveAngle = curveAngle;
+            pathNode.bank = bank;
+            _pathNodes.Add(pathNode);
+            
+            OnUpdatedPathEvent?.Invoke();
+        }
 
         /// <summary>
         /// 開始位置の取得
@@ -93,7 +141,7 @@ namespace CourseGenerator {
         /// </summary>
         public Point GetPointAtDistance(float targetDistance) {
             var startPoint = GetStartPoint();
-            for (var i = 0; i < _pathNodes.Length; i++) {
+            for (var i = 0; i < _pathNodes.Count; i++) {
                 var distance = GetDistance(_pathNodes[i]);
                 if (distance < targetDistance) {
                     targetDistance -= distance;
@@ -290,6 +338,13 @@ namespace CourseGenerator {
         }
 
         /// <summary>
+        /// 値変化時
+        /// </summary>
+        private void OnValidate() {
+            OnUpdatedPathEvent?.Invoke();
+        }
+
+        /// <summary>
         /// ギズモ描画
         /// </summary>
         private void OnDrawGizmos() {
@@ -311,33 +366,21 @@ namespace CourseGenerator {
             Gizmos.DrawLine(startPoint.Position, startPoint.Position + startPoint.Normal * 0.5f);
             
             // PathNodeの描画
-            for (var i = 0; i < _pathNodes.Length; i++) {
+            for (var i = 0; i < _pathNodes.Count; i++) {
                 startPoint = DrawPathNodeGizmos(startPoint, _pathNodes[i]);
             }
 
             Gizmos.color = prevColor;
         }
 
-        private float _currentDistance;
+        /// <summary>
+        /// 更新処理
+        /// </summary>
         private void Update() {
-            if (Input.GetKeyDown(KeyCode.Space)) {
-                _currentDistance = 0.0f;
-            }
-
-            if (Application.isPlaying) {
-                if (TestObj != null) {
-                    var point = GetPointAtDistance(_currentDistance);
-                    var trans = TestObj.transform;
-                    trans.position = point.Position;
-                    trans.rotation = point.Rotation;
-                }
-
-                _currentDistance += Time.deltaTime * 10.0f;
-            }
-            else {
-                if (TestObj != null) {
-                    var point = GetPoint(Test);
-                    var trans = TestObj.transform;
+            if (!Application.isPlaying) {
+                if (_previewObject != null) {
+                    var point = GetPoint(_previewProgress);
+                    var trans = _previewObject.transform;
                     trans.position = point.Position;
                     trans.rotation = point.Rotation;
                 }
