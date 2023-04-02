@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -10,7 +9,9 @@ namespace CourseGenerator {
     [ExecuteAlways]
     public class CourseRenderer : MonoBehaviour {
         [SerializeField, Tooltip("描画対象のPath")]
-        private CoursePath coursePath;
+        private CoursePath _coursePath;
+        [SerializeField, Tooltip("衝突判定用のCollider")]
+        private MeshCollider _meshCollider;
         [SerializeField, Tooltip("床描画に使うMaterial")]
         private Material _floorMaterial;
         [SerializeField, Tooltip("壁描画に使うMaterial")]
@@ -83,11 +84,11 @@ namespace CourseGenerator {
                 _currentCoursePath.OnUpdatedPathEvent -= UpdatedPath;
             }
 
-            if (coursePath != null) {
-                coursePath.OnUpdatedPathEvent += UpdatedPath;
+            if (_coursePath != null) {
+                _coursePath.OnUpdatedPathEvent += UpdatedPath;
             }
             
-            _currentCoursePath = coursePath;
+            _currentCoursePath = _coursePath;
         }
 
         /// <summary>
@@ -98,19 +99,19 @@ namespace CourseGenerator {
                 DestroyImmediate(_mesh);
                 _mesh = null;
             }
-            
-            _mesh = new Mesh();
 
-            if (_width <= float.Epsilon || _unitDistance <= float.Epsilon || coursePath == null) {
+            if (_width <= float.Epsilon || _unitDistance <= float.Epsilon || _coursePath == null) {
                 return;
             }
+            
+            _mesh = new Mesh();
 
             _vertices.Clear();
             _triangles.Clear();
             _uvs.Clear();
             _normals.Clear();
 
-            var totalDistance = coursePath.GetTotalDistance();
+            var totalDistance = _coursePath.GetTotalDistance();
 
             // 床の生成
             var distance = 0.0f;
@@ -118,7 +119,7 @@ namespace CourseGenerator {
             var centerEdgeCount = Mathf.Max(0, _centerEdgeCount);
             var vtxUnitCount = centerEdgeCount + 2;
             while (distance <= totalDistance) {
-                var point = coursePath.GetPointAtDistance(distance);
+                var point = _coursePath.GetPointAtDistance(distance);
                 var halfWidth = _width * 0.5f;
                 var left = point.Position - point.Right * halfWidth;
                 var right = point.Position + point.Right * halfWidth;
@@ -426,6 +427,11 @@ namespace CourseGenerator {
             
             // SystemRAMから解放
             _mesh.UploadMeshData(true);
+            
+            // Colliderに反映
+            if (_meshCollider != null) {
+                _meshCollider.sharedMesh = _mesh;
+            }
         }
     }
 }
