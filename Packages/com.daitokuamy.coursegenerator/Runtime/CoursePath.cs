@@ -36,7 +36,7 @@ namespace CourseGenerator {
         /// パスを構成するノード情報
         /// </summary>
         [Serializable]
-        private class PathNode {
+        public class PathNode {
             [Tooltip("パスのタイプ")] 
             public PathType pathType = PathType.Corner;
 
@@ -65,6 +65,9 @@ namespace CourseGenerator {
         private GameObject _previewObject;
         [SerializeField, Tooltip("プレビュー用進捗スライダー"), Range(0.0f, 1.0f)]
         private float _previewProgress;
+
+        // PathNodeリスト
+        public IReadOnlyList<PathNode> PathNodes => _pathNodes;
 
         // Path更新イベント
         public event Action OnUpdatedPathEvent;
@@ -174,7 +177,7 @@ namespace CourseGenerator {
         /// <summary>
         /// トータルの長さを取得
         /// </summary>
-        private float GetDistance(PathNode node) {
+        public float GetDistance(PathNode node) {
             switch (node.pathType) {
                 case PathType.Straight:
                     return node.straightDistance;
@@ -186,23 +189,9 @@ namespace CourseGenerator {
         }
 
         /// <summary>
-        /// 終端の取得
-        /// </summary>
-        private Point GetEndPoint(Point startPoint, PathNode node) {
-            switch (node.pathType) {
-                case PathType.Straight:
-                    return GetStraightEndPoint(startPoint, node);
-                case PathType.Corner:
-                    return GetCornerEndPoint(startPoint, node);
-            }
-
-            return GetStraightEndPoint(startPoint, node);
-        }
-
-        /// <summary>
         /// ポイントの取得
         /// </summary>
-        private Point GetPoint(Point startPoint, PathNode node, float rate) {
+        public Point GetPoint(Point startPoint, PathNode node, float rate) {
             rate = Mathf.Clamp01(rate);
 
             switch (node.pathType) {
@@ -218,9 +207,23 @@ namespace CourseGenerator {
         /// <summary>
         /// 距離ベースのポイントの取得
         /// </summary>
-        private Point GetPointAtDistance(Point startPoint, PathNode node, float distance) {
+        public Point GetPointAtDistance(Point startPoint, PathNode node, float distance) {
             var totalDistance = GetDistance(node);
             return GetPoint(startPoint, node, Mathf.Clamp01(distance / totalDistance));
+        }
+
+        /// <summary>
+        /// 終端の取得
+        /// </summary>
+        private Point GetEndPoint(Point startPoint, PathNode node) {
+            switch (node.pathType) {
+                case PathType.Straight:
+                    return GetStraightEndPoint(startPoint, node);
+                case PathType.Corner:
+                    return GetCornerEndPoint(startPoint, node);
+            }
+
+            return GetStraightEndPoint(startPoint, node);
         }
 
         /// <summary>
@@ -262,6 +265,11 @@ namespace CourseGenerator {
         /// コーナーポイントの取得
         /// </summary>
         private Point GetCornerPoint(Point startPoint, PathNode node, float rate) {
+            // コーナーとして成立しない値
+            if (node.curveRadius <= float.Epsilon || (node.curveAngle * node.curveAngle) < float.Epsilon) {
+                return startPoint;
+            }
+            
             var flatForward = startPoint.Forward;
             flatForward.y = 0.0f;
             flatForward.Normalize();
@@ -312,36 +320,10 @@ namespace CourseGenerator {
         /// <summary>
         /// PathNode毎のGizmo描画
         /// </summary>
-        private Point DrawPathNodeGizmos(Point startPoint, PathNode node) {
-            // ライン描画
-            var splitDistance = 1.0f;
-            var lineCount = (int)(GetDistance(node) / splitDistance) + 1;
-            var totalDistance = 0.0f;
-            for (var i = 0; i < lineCount; i++) {
-                var distance = totalDistance;
-                totalDistance += splitDistance;
-                var nextDistance = totalDistance;
-                var point = GetPointAtDistance(startPoint, node, distance);
-                var nextPoint = GetPointAtDistance(startPoint, node, nextDistance);
-                
-                // パス
-                Gizmos.color = Color.yellow;
-                Gizmos.DrawLine(point.Position, nextPoint.Position);
-                
-                if (i > 0) {
-                    // 法線
-                    Gizmos.color = Color.green;
-                    Gizmos.DrawLine(point.Position, point.Position + point.Normal * 0.5f);
-                }
-            }
-
-            var endPoint = GetPoint(startPoint, node, 1.0f);
-            
+        private Point DrawPathNodeGizmos(Point startPoint, PathNode node) {var endPoint = GetPoint(startPoint, node, 1.0f);
             // 終点描画
-            Gizmos.color = Color.blue;
-            Gizmos.DrawSphere(endPoint.Position, 0.15f);
-            Gizmos.color = Color.green;
-            Gizmos.DrawLine(endPoint.Position, endPoint.Position + endPoint.Normal * 0.5f);
+            Gizmos.color = new Color(0.5f, 0.5f, 1.0f, 0.75f);
+            Gizmos.DrawSphere(endPoint.Position, 0.5f);
             
             return endPoint;
         }
@@ -369,10 +351,8 @@ namespace CourseGenerator {
             };
 
             // 始点描画
-            Gizmos.color = Color.red;
-            Gizmos.DrawSphere(startPoint.Position, 0.15f);
-            Gizmos.color = Color.green;
-            Gizmos.DrawLine(startPoint.Position, startPoint.Position + startPoint.Normal * 0.5f);
+            Gizmos.color = new Color(1.0f, 0.5f, 0.5f, 0.75f);
+            Gizmos.DrawSphere(startPoint.Position, 0.5f);
             
             // PathNodeの描画
             for (var i = 0; i < _pathNodes.Count; i++) {
