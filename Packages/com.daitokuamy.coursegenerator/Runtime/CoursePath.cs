@@ -66,6 +66,13 @@ namespace CourseGenerator {
         [SerializeField, Tooltip("プレビュー用進捗スライダー"), Range(0.0f, 1.0f)]
         private float _previewProgress;
 
+        // 計算済みのPointリスト
+        private readonly List<Point> _cachedPoints = new List<Point>();
+        // 計算済みのトータル距離
+        private float _cachedTotalDistance;
+        // キャッシュが無効か
+        private bool _dirtyCache;
+
         // PathNodeリスト
         public IReadOnlyList<PathNode> PathNodes => _pathNodes;
 
@@ -78,7 +85,7 @@ namespace CourseGenerator {
         public void ClearPaths() {
             _pathNodes.Clear();
             
-            OnUpdatedPathEvent?.Invoke();
+            OnUpdatedPath();
         }
 
         /// <summary>
@@ -97,7 +104,7 @@ namespace CourseGenerator {
             pathNode.straightDistance = distance;
             _pathNodes.Add(pathNode);
             
-            OnUpdatedPathEvent?.Invoke();
+            OnUpdatedPath();
         }
 
         /// <summary>
@@ -122,7 +129,7 @@ namespace CourseGenerator {
             pathNode.bank = bank;
             _pathNodes.Add(pathNode);
             
-            OnUpdatedPathEvent?.Invoke();
+            OnUpdatedPath();
         }
 
         /// <summary>
@@ -140,6 +147,29 @@ namespace CourseGenerator {
         }
 
         /// <summary>
+        /// 終端位置の取得
+        /// </summary>
+        public Point GetEndPoint() {
+            RefreshCache();
+            return _cachedPoints[_cachedPoints.Count - 1];
+        }
+
+        /// <summary>
+        /// 特定IndexのPointを取得
+        /// </summary>
+        public Point GetPoint(int index) {
+            RefreshCache();
+            
+            index = Mathf.Clamp(index, 0, _cachedPoints.Count - 1);
+            
+            if (index < 0) {
+                return GetStartPoint();
+            }
+
+            return _cachedPoints[index];
+        }
+
+        /// <summary>
         /// 現在のPointを取得
         /// </summary>
         public Point GetPoint(float rate) {
@@ -152,12 +182,14 @@ namespace CourseGenerator {
         /// 現在のPointを取得
         /// </summary>
         public Point GetPointAtDistance(float targetDistance) {
+            RefreshCache();
+            
             var startPoint = GetStartPoint();
             for (var i = 0; i < _pathNodes.Count; i++) {
                 var distance = GetDistance(_pathNodes[i]);
                 if (distance < targetDistance) {
                     targetDistance -= distance;
-                    startPoint = GetEndPoint(startPoint, _pathNodes[i]);
+                    startPoint = GetPoint(i + 1);
                     continue;
                 }
                 
@@ -171,13 +203,18 @@ namespace CourseGenerator {
         /// トータル距離の取得
         /// </summary>
         public float GetTotalDistance() {
-            return _pathNodes.Sum(GetDistance);
+            RefreshCache();
+            return _cachedTotalDistance;
         }
 
         /// <summary>
         /// トータルの長さを取得
         /// </summary>
         public float GetDistance(PathNode node) {
+            if (!IsValidPathNode(node)) {
+                return 0.0f;
+            }
+            
             switch (node.pathType) {
                 case PathType.Straight:
                     return node.straightDistance;
@@ -192,6 +229,10 @@ namespace CourseGenerator {
         /// ポイントの取得
         /// </summary>
         public Point GetPoint(Point startPoint, PathNode node, float rate) {
+            if (!IsValidPathNode(node)) {
+                return startPoint;
+            }
+            
             rate = Mathf.Clamp01(rate);
 
             switch (node.pathType) {
@@ -265,11 +306,6 @@ namespace CourseGenerator {
         /// コーナーポイントの取得
         /// </summary>
         private Point GetCornerPoint(Point startPoint, PathNode node, float rate) {
-            // コーナーとして成立しない値
-            if (node.curveRadius <= float.Epsilon || (node.curveAngle * node.curveAngle) < float.Epsilon) {
-                return startPoint;
-            }
-            
             var flatForward = startPoint.Forward;
             flatForward.y = 0.0f;
             flatForward.Normalize();
@@ -318,6 +354,61 @@ namespace CourseGenerator {
         }
 
         /// <summary>
+        /// 有効なNodeかチェック
+        /// </summary>
+        private bool IsValidPathNode(PathNode node) {
+            switch (node.pathType) {
+                case PathType.Straight: {
+                    if (node.straightDistance <= float.Epsilon || node.slope >= 90.0f - float.Epsilon ||
+                        node.slope <= -90 + float.Epsilon) {
+                        return false;
+                    }
+
+                    break;
+                }
+                case PathType.Corner: {
+                    if (node.curveRadius <= float.Epsilon || Mathf.Abs(node.curveAngle) <= float.Epsilon) {
+                        return false;
+                    }
+
+                    break;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 計算結果のキャッシュ
+        /// </summary>
+        private void RefreshCache(bool force = false) {
+            if (!force && !_dirtyCache) {
+                return;
+            }
+            
+            _cachedPoints.Clear();
+            _cachedTotalDistance = 0.0f;
+            
+            var startPoint = GetStartPoint();
+            _cachedPoints.Add(startPoint);
+            for (var i = 0; i < _pathNodes.Count; i++) {
+                startPoint = GetPoint(startPoint, _pathNodes[i], 1.0f);
+                _cachedTotalDistance += GetDistance(_pathNodes[i]);
+                _cachedPoints.Add(startPoint);
+            }
+
+            _dirtyCache = false;
+        }
+
+        /// <summary>
+        /// Path更新時処理
+        /// </summary>
+        private void OnUpdatedPath() {
+            _dirtyCache = true;
+            OnUpdatedPathEvent?.Invoke();
+        }
+
+        /// <summary>
         /// PathNode毎のGizmo描画
         /// </summary>
         private Point DrawPathNodeGizmos(Point startPoint, PathNode node) {var endPoint = GetPoint(startPoint, node, 1.0f);
@@ -332,7 +423,7 @@ namespace CourseGenerator {
         /// 値変化時
         /// </summary>
         private void OnValidate() {
-            OnUpdatedPathEvent?.Invoke();
+            OnUpdatedPath();
         }
 
         /// <summary>
@@ -366,6 +457,10 @@ namespace CourseGenerator {
         /// 更新処理
         /// </summary>
         private void Update() {
+            if (_dirtyCache) {
+                RefreshCache();
+            }
+            
             if (!Application.isPlaying) {
                 if (_previewObject != null) {
                     var point = GetPoint(_previewProgress);

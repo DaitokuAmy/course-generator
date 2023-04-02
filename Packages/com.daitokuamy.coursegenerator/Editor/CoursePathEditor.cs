@@ -21,7 +21,6 @@ namespace CourseGenerator.Editor {
         
         // 選択情報
         private class SelectedInfo {
-            public Vector2 MousePosition;
             public CoursePath.PathNode Node;
             public int Index;
             public Vector2 Scroll;
@@ -58,11 +57,20 @@ namespace CourseGenerator.Editor {
                 var controlId = HandleUtility.nearestControl;
                 if (_controlIdToNodes.TryGetValue(controlId, out var node)) {
                     _selectedInfo = new SelectedInfo {
-                        MousePosition = Event.current.mousePosition,
                         Node = node,
                         Index = path.PathNodes.ToList().IndexOf(node),
                         Scroll = Vector2.zero
                     };
+                }
+            }
+
+            if (Event.current.type == EventType.ExecuteCommand) {
+                if (Event.current.commandName == "FrameSelected") {
+                    if (_selectedInfo != null) {
+                        var point = path.GetPoint(_selectedInfo.Index);
+                        SceneView.lastActiveSceneView.LookAt(point.Position);
+                        Event.current.Use();
+                    }
                 }
             }
             
