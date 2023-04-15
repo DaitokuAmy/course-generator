@@ -420,6 +420,14 @@ namespace CourseGenerator {
             
             return endPoint;
         }
+        
+        /// <summary>
+        /// 生成時処理
+        /// </summary>
+        private void Awake() {
+            OnUpdatedPath();
+            RefreshCache();
+        }
 
         /// <summary>
         /// 値変化時
