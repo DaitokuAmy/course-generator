@@ -37,6 +37,9 @@ namespace CourseGenerator {
         private bool _dirty;
         private CoursePath _currentCoursePath;
 
+        // コース幅
+        public float FloorWidth => _width;
+
         /// <summary>
         /// メッシュの再構築
         /// </summary>
