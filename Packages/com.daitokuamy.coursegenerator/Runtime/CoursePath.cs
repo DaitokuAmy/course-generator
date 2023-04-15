@@ -94,7 +94,7 @@ namespace CourseGenerator {
         /// <param name="slope">勾配</param>
         /// <param name="tilt">傾き</param>
         /// <param name="distance">距離(XZ)</param>
-        public void AddStraightPath(float slope, float tilt, float distance) {
+        public PathNode AddStraightPath(float slope, float tilt, float distance) {
             distance = Mathf.Max(distance, 0.0f);
             
             var pathNode = new PathNode();
@@ -105,6 +105,7 @@ namespace CourseGenerator {
             _pathNodes.Add(pathNode);
             
             OnUpdatedPath();
+            return pathNode;
         }
 
         /// <summary>
@@ -115,7 +116,7 @@ namespace CourseGenerator {
         /// <param name="curveRadius">カーブ半径</param>
         /// <param name="curveAngle">カーブ角度(-180～180)</param>
         /// <param name="bank">バンク(0～90)</param>
-        public void AddCornerPath(float slope, float tilt, float curveRadius, float curveAngle, float bank) {
+        public PathNode AddCornerPath(float slope, float tilt, float curveRadius, float curveAngle, float bank) {
             curveRadius = Mathf.Max(curveRadius, 0.0f);
             curveAngle = Mathf.Clamp(curveAngle, -180, 180);
             bank = Mathf.Clamp(bank, 0, 90);
@@ -130,6 +131,7 @@ namespace CourseGenerator {
             _pathNodes.Add(pathNode);
             
             OnUpdatedPath();
+            return pathNode;
         }
 
         /// <summary>
