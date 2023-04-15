@@ -135,6 +135,13 @@ namespace CourseGenerator {
         }
 
         /// <summary>
+        /// Pathの変更状態をリフレッシュさせる
+        /// </summary>
+        public void Refresh() {
+            OnUpdatedPath();
+        }
+
+        /// <summary>
         /// 開始位置の取得
         /// </summary>
         public Point GetStartPoint() {
