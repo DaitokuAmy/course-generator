@@ -79,10 +79,11 @@ namespace CourseGenerator.Editor {
                 var prop = serializedObject.FindProperty("_pathNodes").GetArrayElementAtIndex(_selectedInfo.Index);
                 var width = WindowWidth;
                 var height = 44.0f;
+                var viewSize = SceneView.lastActiveSceneView.position.size;
                 foreach (SerializedProperty childProp in prop) {
                     height += EditorGUI.GetPropertyHeight(childProp, true);
                 }
-                var rect = new Rect(Screen.width - width - 5, Screen.height - height - 50, width, height);
+                var rect = new Rect(viewSize.x - width - 5, viewSize.y - height - 50, width, height);
                 GUILayout.Window(0, rect, _ => {
                     serializedObject.Update();
                     
