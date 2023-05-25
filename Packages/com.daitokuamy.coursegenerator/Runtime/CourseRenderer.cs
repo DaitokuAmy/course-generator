@@ -429,8 +429,8 @@ namespace CourseGenerator {
             _mesh.SetSubMesh(0, new SubMeshDescriptor(0, floorIndexCount));
             _mesh.SetSubMesh(1, new SubMeshDescriptor(floorIndexCount, _triangles.Count - floorIndexCount));
             
-            // SystemRAMから解放
-            _mesh.UploadMeshData(true);
+            // SystemRAMから解放(Colliderに使う場合は、SystemRAMを解放しない)
+            _mesh.UploadMeshData(_meshCollider == null);
             
             // Colliderに反映
             if (_meshCollider != null) {
